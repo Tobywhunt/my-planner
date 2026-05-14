@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Planner</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f7f7f5;
+    --bg-info: #E6F1FB;
+    --text-primary: #1a1a1a;
+    --text-secondary: #555;
+    --text-tertiary: #999;
+    --border: rgba(0,0,0,0.12);
+    --border-secondary: rgba(0,0,0,0.2);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --orange: #D85A30;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1e1e1e;
+      --bg-secondary: #252525;
+      --bg-info: #0c2840;
+      --text-primary: #f0f0f0;
+      --text-secondary: #aaa;
+      --text-tertiary: #666;
+      --border: rgba(255,255,255,0.1);
+      --border-secondary: rgba(255,255,255,0.2);
+      --blue-light: #0c2840;
+    }
+  }
+  body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .app { display: flex; height: 660px; width: 100%; max-width: 960px; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-primary); position: relative; }
+  .sidebar { width: 240px; border-right: 0.5px solid var(--border); display: flex; flex-direction: column; background: var(--bg-secondary); flex-shrink: 0; }
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; position: relative; }
+  .sidebar-top { padding: 16px 14px 10px; }
+  .app-title { font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .mini-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .mini-cal-month { font-size: 12px; font-weight: 500; color: var(--text-primary); }
+  .mini-nav { background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 15px; padding: 2px 5px; border-radius: 4px; }
+  .mini-nav:hover { background: var(--bg-primary); }
+  .mini-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+  .mini-day-label { font-size: 10px; color: var(--text-tertiary); text-align: center; padding: 2px 0; }
+  .mini-day { font-size: 11px; text-align: center; padding: 3px 1px; border-radius: 50%; cursor: pointer; color: var(--text-secondary); aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+  .mini-day:hover { background: var(--bg-primary); color: var(--text-primary); }
+  .mini-day.today { background: var(--blue); color: #fff; font-weight: 500; }
+  .mini-day.in-week { background: var(--blue-light); color: var(--blue); }
+  .mini-day.other-month { color: var(--border-secondary); }
+  .mini-day.has-event::after { content: ''; display: block; width: 3px; height: 3px; border-radius: 50%; background: var(--blue); margin: 1px auto 0; }
+  .mini-day.today::after { background: #fff; }
+  .sidebar-section { padding: 10px 14px; border-top: 0.5px solid var(--border); flex: 1; overflow-y: auto; }
+  .sidebar-label { font-size: 11px; font-weight: 500; color: var(--text-tertiary); letter-spacing: .05em; text-transform: uppercase; margin-bottom: 8px; }
+  .task-item { display: flex; align-items: center; gap: 7px; padding: 5px 0; cursor: pointer; }
+  .task-cb { width: 15px; height: 15px; border-radius: 4px; border: 0.5px solid var(--border-secondary); background: var(--bg-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
+  .task-cb.done { background: var(--blue); border-color: var(--blue); }
+  .task-cb.done::after { content: '✓'; color: #fff; font-size: 9px; }
+  .task-text { font-size: 12px; color: var(--text-secondary); }
+  .task-text.done { text-decoration: line-through; color: var(--text-tertiary); }
+  .add-task-row { display: flex; align-items: center; gap: 5px; margin-top: 7px; }
+  .add-task-input { flex: 1; border: 0.5px solid var(--border); border-radius: 6px; padding: 4px 7px; font-size: 11px; background: var(--bg-primary); color: var(--text-primary); outline: none; }
+  .add-task-input:focus { border-color: var(--blue); }
+  .add-task-btn { background: var(--blue); color: #fff; border: none; border-radius: 6px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; flex-shrink: 0; }
+  .main-header { padding: 12px 16px 10px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0; }
+  .week-nav { display: flex; align-items: center; gap: 6px; }
+  .week-nav-btn { background: none; border: 0.5px solid var(--border); border-radius: 6px; padding: 4px 9px; font-size: 13px; cursor: pointer; color: var(--text-secondary); }
+  .week-nav-btn:hover { background: var(--bg-secondary); }
+  .week-range { font-size: 14px; font-weight: 500; color: var(--text-primary); min-width: 160px; text-align: center; }
+  .view-tabs { display: flex; gap: 3px; }
+  .view-tab { border: 0.5px solid var(--border); background: none; border-radius: 6px; padding: 4px 11px; font-size: 12px; color: var(--text-secondary); cursor: pointer; }
+  .view-tab.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .today-btn { background: none; border: 0.5px solid var(--border); border-radius: 6px; padding: 4px 9px; font-size: 11px; cursor: pointer; color: var(--text-secondary); }
+  .today-btn:hover { background: var(--bg-secondary); }
+  .timeline { flex: 1; overflow-y: auto; position: relative; }
+  .hour-row { display: flex; align-items: flex-start; min-height: 52px; }
+  .hour-label { width: 52px; font-size: 11px; color: var(--text-tertiary); text-align: right; padding-right: 10px; padding-top: 2px; flex-shrink: 0; }
+  .hour-line { flex: 1; border-top: 0.5px solid var(--border); position: relative; margin-right: 12px; }
+  .event-block { position: absolute; left: 0; right: 0; border-radius: 0; padding: 3px 7px; font-size: 11px; cursor: pointer; border-left: 3px solid; }
+  .event-title { font-weight: 500; }
+  .event-time-label { opacity: .8; font-size: 10px; }
+  .now-line { position: absolute; left: 52px; right: 12px; height: 2px; background: var(--orange); z-index: 10; }
+  .now-dot { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
+  .week-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .week-header-row { display: grid; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+  .week-day-hdr { text-align: center; padding: 8px 4px; font-size: 12px; border-right: 0.5px solid var(--border); cursor: pointer; }
+  .week-day-hdr:last-child { border-right: none; }
+  .week-day-name { color: var(--text-tertiary); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+  .week-day-num { font-size: 18px; font-weight: 500; color: var(--text-primary); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 2px auto 0; }
+  .week-day-num.today { background: var(--blue); color: #fff; }
+  .week-day-num.selected-day { background: var(--blue-light); color: var(--blue); }
+  .week-body { flex: 1; overflow-y: auto; position: relative; }
+  .week-cell { border-right: 0.5px solid var(--border); border-top: 0.5px solid var(--border); position: relative; min-height: 48px; }
+  .week-cell:last-child { border-right: none; }
+  .week-event { position: absolute; left: 1px; right: 1px; border-radius: 0; padding: 2px 4px; font-size: 10px; cursor: pointer; overflow: hidden; border-left: 2px solid; }
+  .week-event-title { font-weight: 500; line-height: 1.2; }
+  .week-event-time { opacity: .8; font-size: 9px; }
+  .now-line-week { position: absolute; height: 2px; background: var(--orange); z-index: 10; pointer-events: none; }
+  .now-dot-week { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
+  .add-event-btn { position: absolute; bottom: 12px; right: 16px; background: var(--blue); color: #fff; border: none; border-radius: 18px; padding: 7px 14px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; z-index: 20; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--bg-primary); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 20px; width: 300px; }
+  .modal-title { font-size: 14px; font-weight: 500; margin-bottom: 12px; color: var(--text-primary); }
+  .modal label { font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 3px; margin-top: 9px; }
+  .modal input { width: 100%; border: 0.5px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 12px; background: var(--bg-primary); color: var(--text-primary); outline: none; font-family: inherit; }
+  .modal input:focus { border-color: var(--blue); }
+  .modal-actions { display: flex; gap: 7px; margin-top: 14px; justify-content: flex-end; }
+  .btn-cancel { background: none; border: 0.5px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--text-secondary); }
+  .btn-save { background: var(--blue); color: #fff; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; }
+  .color-row { display: flex; gap: 7px; margin-top: 5px; }
+  .color-dot { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+  .color-dot.sel { border-color: var(--text-primary); }
+  @media (max-width: 600px) {
+    body { padding: 0; }
+    .app { height: 100vh; border-radius: 0; border: none; flex-direction: column; }
+    .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 0.5px solid var(--border); flex-direction: row; overflow-x: auto; }
+    .sidebar-top { flex-shrink: 0; }
+    .sidebar-section { border-top: none; border-left: 0.5px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <div class="app-title"><i class="ti ti-calendar"></i> My Planner</div>
+      <div class="mini-cal-header">
+        <button class="mini-nav" id="prev-month">‹</button>
+        <span class="mini-cal-month" id="mini-month-label"></span>
+        <button class="mini-nav" id="next-month">›</button>
+      </div>
+      <div class="mini-cal-grid" id="mini-cal"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Tasks</div>
+      <div id="task-list"></div>
+      <div class="add-task-row">
+        <input class="add-task-input" id="new-task-input" placeholder="Add a task..." />
+        <button class="add-task-btn" id="add-task-btn">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="main-header">
+      <div class="week-nav">
+        <button class="week-nav-btn" id="prev-period">‹</button>
+        <span class="week-range" id="period-label"></span>
+        <button class="week-nav-btn" id="next-period">›</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="today-btn" id="today-btn">Today</button>
+        <div class="view-tabs">
+          <button class="view-tab" id="tab-day">Day</button>
+          <button class="view-tab active" id="tab-week">Week</button>
+        </div>
+      </div>
+    </div>
+    <div id="view-container" style="flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;"></div>
+    <button class="add-event-btn" id="open-modal-btn"><i class="ti ti-plus"></i> Add event</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-bg">
+  <div class="modal">
+    <div class="modal-title">New event</div>
+    <label>Title</label><input id="evt-title" placeholder="Event name" />
+    <label>Date</label><input type="date" id="evt-date" />
+    <label>Start time</label><input type="time" id="evt-start" />
+    <label>End time</label><input type="time" id="evt-end" />
+    <label>Color</label>
+    <div class="color-row" id="color-row"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modal-cancel">Cancel</button>
+      <button class="btn-save" id="modal-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS=[
+  {bg:'#E6F1FB',fg:'#185FA5',border:'#378ADD'},
+  {bg:'#E1F5EE',fg:'#0F6E56',border:'#1D9E75'},
+  {bg:'#FAECE7',fg:'#993C1D',border:'#D85A30'},
+  {bg:'#EEEDFE',fg:'#3C3489',border:'#7F77DD'},
+  {bg:'#EAF3DE',fg:'#3B6D11',border:'#639922'},
+];
+
+let today=new Date();today.setHours(0,0,0,0);
+let miniViewDate=new Date(today);
+let selectedDate=new Date(today);
+let currentView='week';
+let selectedColor=0;
+let nextId=10;
+
+function fmtDate(d){return d.toISOString().slice(0,10);}
+function offset(d,n){let r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function parseTime(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
+function getWeekStart(d){let s=new Date(d);s.setDate(s.getDate()-s.getDay());return s;}
+
+let events=[
+  {id:1,title:'Morning standup',date:fmtDate(today),start:'09:00',end:'09:30',color:0},
+  {id:2,title:'Deep work block',date:fmtDate(today),start:'10:00',end:'12:00',color:3},
+  {id:3,title:'Lunch',date:fmtDate(today),start:'12:30',end:'13:15',color:2},
+  {id:4,title:'Team sync',date:fmtDate(today),start:'14:00',end:'15:00',color:1},
+  {id:5,title:'Review goals',date:fmtDate(offset(today,1)),start:'09:00',end:'10:00',color:4},
+  {id:6,title:'Doctor appt',date:fmtDate(offset(today,2)),start:'11:00',end:'11:45',color:2},
+  {id:7,title:'Sprint planning',date:fmtDate(offset(today,3)),start:'10:00',end:'11:30',color:0},
+];
+let tasks=[
+  {id:1,text:'Finish quarterly report',done:false},
+  {id:2,text:'Review PR #142',done:true},
+  {id:3,text:'Send invoice to client',done:false},
+];
+
+function saveToStorage(){
+  try{localStorage.setItem('planner_events',JSON.stringify(events));localStorage.setItem('planner_tasks',JSON.stringify(tasks));}catch(e){}
+}
+function loadFromStorage(){
+  try{
+    const e=localStorage.getItem('planner_events');
+    const t=localStorage.getItem('planner_tasks');
+    if(e)events=JSON.parse(e);
+    if(t)tasks=JSON.parse(t);
+  }catch(e){}
+}
+
+function buildMiniCal(){
+  const label=document.getElementById('mini-month-label');
+  const grid=document.getElementById('mini-cal');
+  const y=miniViewDate.getFullYear(),m=miniViewDate.getMonth();
+  label.textContent=miniViewDate.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+  grid.innerHTML='';
+  ['S','M','T','W','T','F','S'].forEach(d=>{
+    const el=document.createElement('div');el.className='mini-day-label';el.textContent=d;grid.appendChild(el);
+  });
+  const first=new Date(y,m,1).getDay();
+  const days=new Date(y,m+1,0).getDate();
+  const eventDays=new Set(events.map(e=>e.date));
+  const ws=getWeekStart(selectedDate);
+  const we=offset(ws,6);
+  for(let i=0;i<first;i++){const el=document.createElement('div');el.className='mini-day other-month';grid.appendChild(el);}
+  for(let d=1;d<=days;d++){
+    const date=new Date(y,m,d);const ds=fmtDate(date);
+    const el=document.createElement('div');el.className='mini-day';el.textContent=d;
+    if(fmtDate(date)===fmtDate(today))el.classList.add('today');
+    if(currentView==='week'&&date>=ws&&date<=we)el.classList.add('in-week');
+    if(currentView==='day'&&fmtDate(date)===fmtDate(selectedDate))el.classList.add('in-week');
+    if(eventDays.has(ds))el.classList.add('has-event');
+    el.addEventListener('click',()=>{selectedDate=new Date(date);renderAll();});
+    grid.appendChild(el);
+  }
+}
+
+function buildDayView(){
+  const vc=document.getElementById('view-container');vc.innerHTML='';
+  const tl=document.createElement('div');tl.className='timeline';tl.style.cssText='flex:1;overflow-y:auto;position:relative;';
+  const nowLine=document.createElement('div');nowLine.className='now-line';
+  const nowDot=document.createElement('div');nowDot.className='now-dot';
+  nowLine.appendChild(nowDot);tl.appendChild(nowLine);
+  const dayStr=fmtDate(selectedDate);
+  const dayEvents=events.filter(e=>e.date===dayStr);
+  for(let h=0;h<24;h++){
+    const row=document.createElement('div');row.className='hour-row';
+    const lbl=document.createElement('div');lbl.className='hour-label';
+    lbl.textContent=h===0?'':(h<12?`${h} am`:h===12?'12 pm':`${h-12} pm`);
+    const line=document.createElement('div');line.className='hour-line';
+    dayEvents.filter(e=>Math.floor(parseTime(e.start)/60)===h).forEach(e=>{
+      const s=parseTime(e.start),en=parseTime(e.end);
+      const top=((s%60)/60)*52,height=Math.max(((en-s)/60)*52,22);
+      const c=COLORS[e.color];
+      const block=document.createElement('div');block.className='event-block';
+      block.style.cssText=`top:${top}px;height:${height}px;background:${c.bg};border-left-color:${c.border};color:${c.fg};`;
+      block.innerHTML=`<div class="event-title">${e.title}</div><div class="event-time-label">${e.start}–${e.end}</div>`;
+      line.appendChild(block);
+    });
+    row.appendChild(lbl);row.appendChild(line);tl.appendChild(row);
+  }
+  const now=new Date();
+  if(fmtDate(now)===fmtDate(selectedDate)){
+    const top=now.getHours()*52+(now.getMinutes()/60)*52+8;
+    nowLine.style.top=top+'px';nowLine.style.display='block';
+    setTimeout(()=>tl.scrollTop=top-120,50);
+  }else{nowLine.style.display='none';}
+  vc.appendChild(tl);updatePeriodLabel();
+}
+
+function buildWeekView(){
+  const vc=document.getElementById('view-container');vc.innerHTML='';
+  const ws=getWeekStart(selectedDate);
+  const days=Array.from({length:7},(_,i)=>offset(ws,i));
+  const wv=document.createElement('div');wv.className='week-view';
+  const colsStyle=`grid-template-columns:40px repeat(7,minmax(0,1fr));`;
+  const hdr=document.createElement('div');
+  hdr.className='week-header-row';hdr.style.cssText=colsStyle+'display:grid;flex-shrink:0;';
+  const corner=document.createElement('div');corner.style.cssText='border-right:0.5px solid var(--border);';hdr.appendChild(corner);
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  days.forEach(d=>{
+    const cell=document.createElement('div');cell.className='week-day-hdr';
+    const isToday=fmtDate(d)===fmtDate(today);
+    const isSel=fmtDate(d)===fmtDate(selectedDate);
+    cell.innerHTML=`<div class="week-day-name">${dayNames[d.getDay()]}</div><div class="week-day-num${isToday?' today':isSel?' selected-day':''}">${d.getDate()}</div>`;
+    cell.addEventListener('click',()=>{selectedDate=new Date(d);currentView='day';renderAll();});
+    hdr.appendChild(cell);
+  });
+  wv.appendChild(hdr);
+  const body=document.createElement('div');body.className='week-body';
+  const grid=document.createElement('div');grid.style.cssText=`display:grid;${colsStyle}position:relative;`;
+  const now=new Date();
+  const nowInWeek=days.some(d=>fmtDate(d)===fmtDate(now));
+  if(nowInWeek){
+    const dayIdx=days.findIndex(d=>fmtDate(d)===fmtDate(now));
+    const nowLine=document.createElement('div');nowLine.className='now-line-week';
+    const nowDot=document.createElement('div');nowDot.className='now-dot-week';nowLine.appendChild(nowDot);
+    const top=now.getHours()*48+(now.getMinutes()/60)*48;
+    nowLine.style.top=top+'px';
+    nowLine.style.left=`calc(40px + ${dayIdx/7*100}%)`;
+    nowLine.style.width=`calc(${100/7}%)`;
+    grid.appendChild(nowLine);
+    setTimeout(()=>body.scrollTop=top-120,50);
+  }
+  for(let h=0;h<24;h++){
+    const lbl=document.createElement('div');
+    lbl.style.cssText='font-size:10px;color:var(--text-tertiary);text-align:right;padding-right:5px;padding-top:2px;border-top:0.5px solid var(--border);min-height:48px;';
+    lbl.textContent=h===0?'':(h<12?`${h}a`:h===12?'12p':`${h-12}p`);
+    grid.appendChild(lbl);
+    days.forEach(d=>{
+      const cell=document.createElement('div');cell.className='week-cell';cell.style.minHeight='48px';
+      const ds=fmtDate(d);
+      events.filter(e=>e.date===ds&&Math.floor(parseTime(e.start)/60)===h).forEach(e=>{
+        const s=parseTime(e.start),en=parseTime(e.end);
+        const top=((s%60)/60)*48,height=Math.max(((en-s)/60)*48,18);
+        const c=COLORS[e.color];
+        const block=document.createElement('div');block.className='week-event';
+        block.style.cssText=`top:${top}px;height:${height}px;background:${c.bg};border-left-color:${c.border};color:${c.fg};`;
+        block.innerHTML=`<div class="week-event-title">${e.title}</div>${height>22?`<div class="week-event-time">${e.start}</div>`:''}`;
+        cell.appendChild(block);
+      });
+      grid.appendChild(cell);
+    });
+  }
+  body.appendChild(grid);wv.appendChild(body);vc.appendChild(wv);updatePeriodLabel();
+}
+
+function updatePeriodLabel(){
+  const lbl=document.getElementById('period-label');
+  if(currentView==='day'){
+    lbl.textContent=selectedDate.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+  }else{
+    const ws=getWeekStart(selectedDate);const we=offset(ws,6);
+    const s=ws.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const e=we.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    lbl.textContent=`${s} – ${e}`;
+  }
+}
+
+function buildTaskList(){
+  const list=document.getElementById('task-list');list.innerHTML='';
+  tasks.forEach(t=>{
+    const row=document.createElement('div');row.className='task-item';
+    const cb=document.createElement('div');cb.className='task-cb'+(t.done?' done':'');
+    cb.addEventListener('click',()=>{t.done=!t.done;saveToStorage();buildTaskList();});
+    const txt=document.createElement('div');txt.className='task-text'+(t.done?' done':'');txt.textContent=t.text;
+    row.appendChild(cb);row.appendChild(txt);list.appendChild(row);
+  });
+}
+
+function buildColorRow(){
+  const cr=document.getElementById('color-row');cr.innerHTML='';
+  COLORS.forEach((c,i)=>{
+    const dot=document.createElement('div');dot.className='color-dot'+(i===selectedColor?' sel':'');
+    dot.style.background=c.border;
+    dot.addEventListener('click',()=>{selectedColor=i;buildColorRow();});
+    cr.appendChild(dot);
+  });
+}
+
+function renderAll(){
+  buildMiniCal();buildTaskList();
+  if(currentView==='day')buildDayView();else buildWeekView();
+  document.getElementById('tab-day').classList.toggle('active',currentView==='day');
+  document.getElementById('tab-week').classList.toggle('active',currentView==='week');
+}
+
+document.getElementById('prev-month').addEventListener('click',()=>{miniViewDate.setMonth(miniViewDate.getMonth()-1);buildMiniCal();});
+document.getElementById('next-month').addEventListener('click',()=>{miniViewDate.setMonth(miniViewDate.getMonth()+1);buildMiniCal();});
+document.getElementById('prev-period').addEventListener('click',()=>{
+  if(currentView==='day')selectedDate=offset(selectedDate,-1);
+  else selectedDate=offset(getWeekStart(selectedDate),-7);
+  renderAll();
+});
+document.getElementById('next-period').addEventListener('click',()=>{
+  if(currentView==='day')selectedDate=offset(selectedDate,1);
+  else selectedDate=offset(getWeekStart(selectedDate),7);
+  renderAll();
+});
+document.getElementById('today-btn').addEventListener('click',()=>{selectedDate=new Date(today);renderAll();});
+document.getElementById('tab-day').addEventListener('click',()=>{currentView='day';renderAll();});
+document.getElementById('tab-week').addEventListener('click',()=>{currentView='week';renderAll();});
+document.getElementById('add-task-btn').addEventListener('click',()=>{
+  const inp=document.getElementById('new-task-input');
+  if(!inp.value.trim())return;
+  tasks.push({id:nextId++,text:inp.value.trim(),done:false});
+  inp.value='';saveToStorage();buildTaskList();
+});
+document.getElementById('new-task-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('add-task-btn').click();});
+document.getElementById('open-modal-btn').addEventListener('click',()=>{
+  document.getElementById('evt-date').value=fmtDate(selectedDate);
+  document.getElementById('evt-title').value='';
+  document.getElementById('evt-start').value='09:00';
+  document.getElementById('evt-end').value='10:00';
+  buildColorRow();
+  document.getElementById('modal-bg').classList.add('open');
+});
+document.getElementById('modal-cancel').addEventListener('click',()=>document.getElementById('modal-bg').classList.remove('open'));
+document.getElementById('modal-bg').addEventListener('click',e=>{if(e.target===document.getElementById('modal-bg'))document.getElementById('modal-bg').classList.remove('open');});
+document.getElementById('modal-save').addEventListener('click',()=>{
+  const title=document.getElementById('evt-title').value.trim();
+  const date=document.getElementById('evt-date').value;
+  const start=document.getElementById('evt-start').value;
+  const end=document.getElementById('evt-end').value;
+  if(!title||!date||!start||!end)return;
+  events.push({id:nextId++,title,date,start,end,color:selectedColor});
+  saveToStorage();
+  document.getElementById('modal-bg').classList.remove('open');
+  renderAll();
+});
+
+loadFromStorage();
+renderAll();
+</script>
+</body>
+</html>
